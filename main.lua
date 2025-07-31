@@ -10,7 +10,8 @@ function love.load()
     y = windowHeight - 40,
     w = 60,
     h = 20,
-    speed = 300
+    speed = 300,
+    sprintFactor = 2.2 -- 1.8 -- bewegt sich ~80 % schneller, wenn Shift gehalten wird
   }
 
   objects = {}
@@ -37,12 +38,22 @@ end
 function love.update(dt)
   if gameOver then return end
 
-  -- Spielerbewegung
+  -- horizontale Richtung (-1, 0, 1).
+  local direction = 0
   if love.keyboard.isDown("left") or love.keyboard.isDown("a") then
-    player.x = player.x - player.speed * dt
-  elseif love.keyboard.isDown("right") or love.keyboard.isDown("d") then
-    player.x = player.x + player.speed * dt
+    direction = direction - 1
   end
+  if love.keyboard.isDown("right") or love.keyboard.isDown("d") then
+    direction = direction + 1
+  end
+
+  -- Sprint-Multiplikator, wenn Shift gehalten wird
+  local currentSpeed = player.speed
+  if love.keyboard.isDown("lshift") or love.keyboard.isDown("rshift") then
+    currentSpeed = currentSpeed * player.sprintFactor
+  end
+
+  player.x = player.x + direction * currentSpeed * dt
 
   -- Spieler innerhalb des Fensters halten
   player.x = math.max(0, math.min(player.x, windowWidth - player.w))
@@ -67,7 +78,7 @@ function love.update(dt)
     if caught then
       score = score + 1
       table.remove(objects, i)
-    elseif o.y - o.size > windowHeight then -- Fehlendes Objekt
+    elseif o.y - o.size > windowHeight then -- fehlendes Objekt
       lives = lives - 1
       table.remove(objects, i)
       if lives <= 0 then
@@ -89,6 +100,7 @@ function love.draw()
   -- HUD
   love.graphics.print("Score: " .. score, 10, 10)
   love.graphics.print("Lives: " .. lives, 10, 40)
+  love.graphics.print("Shift = Turbo", 10, 70)
 
   if gameOver then
     love.graphics.printf("Game Over! Press R to restart", 0, windowHeight / 2 - 20, windowWidth, "center")
